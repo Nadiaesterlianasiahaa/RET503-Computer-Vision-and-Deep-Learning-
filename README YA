@@ -1,0 +1,162 @@
+# PJ1 RET503 — Pengembangan, Pelatihan, Tuning, Seleksi, dan Pengujian Model YOLO
+
+Proyek ini membandingkan beberapa konfigurasi model YOLO untuk mendeteksi dan mengenali objek berdasarkan dataset `dataset_v1` yang terdiri dari 31 kelas. Proses eksperimen meliputi penggunaan bobot pretrained, pelatihan dari awal (*scratch*), tuning, pemilihan model terbaik, dan pengujian prediksi.
+
+## Tujuan
+
+- Menyiapkan dan memvalidasi dataset deteksi objek.
+- Melatih model YOLO menggunakan beberapa skenario eksperimen.
+- Membandingkan performa model menggunakan Precision, Recall, mAP@50, dan mAP@50–95.
+- Memilih model terbaik berdasarkan nilai mAP@50–95 pada data validasi.
+- Menjalankan prediksi pada gambar dan mengevaluasi model terpilih pada data test.
+
+## Dataset
+
+Dataset yang digunakan bernama `dataset_v1`.
+
+| Split | Jumlah gambar |
+|---|---:|
+| Train | 972 |
+| Validation | 278 |
+| Test | 140 |
+| **Total** | **1.390** |
+
+Dataset memiliki **31 kelas**. Pemeriksaan anotasi pada notebook melaporkan 1.390 bounding box, seluruh 31 kelas ditemukan, dan tidak ada baris anotasi bermasalah.
+
+Struktur dataset yang digunakan:
+
+```text
+dataset_v1/
+├── data.yaml
+├── images/
+│   ├── train/
+│   ├── val/
+│   └── test/
+└── labels/
+    ├── train/
+    ├── val/
+    └── test/
+```
+
+> Dataset tidak disertakan di repository ini apabila ukurannya terlalu besar atau penggunaannya dibatasi. Siapkan `dataset_v1` dan pastikan lokasi serta konfigurasi di `data.yaml` sesuai sebelum menjalankan notebook.
+
+## Lingkungan Pengembangan
+
+Eksperimen dijalankan menggunakan Google Colab dengan GPU Tesla T4.
+
+- Python: 3.13.15 (berdasarkan output notebook)
+- Ultralytics: 8.4.183
+- GPU: NVIDIA Tesla T4
+- Framework: Ultralytics YOLO / PyTorch
+- Notebook utama: `p1.ipynb`
+
+## Eksperimen Model
+
+Tiga eksperimen dibandingkan pada data validasi.
+
+| Eksperimen | Pendekatan | Ukuran gambar | Epoch | Precision | Recall | mAP@50 | mAP@50–95 |
+|---|---|---:|---:|---:|---:|---:|---:|
+| E1 — Pretrained | Menggunakan bobot pretrained | 416 | 10 | 0.9642 | 0.9254 | 0.9845 | 0.8743 |
+| E2 — Scratch | Bobot diinisialisasi dari awal (`pretrained=False`) | 416 | 10 | 0.4389 | 0.0985 | 0.0642 | 0.0316 |
+| E3 — Tuning | Konfigurasi tuning dengan model YOLO26n | 640 | 10 | 0.9480 | 0.9684 | 0.9889 | 0.8822 |
+
+**Model terbaik berdasarkan mAP@50–95 validasi adalah E3 — Tuning**, dengan mAP@50–95 sebesar **0.8822** dan mAP@50 sebesar **0.9889**.
+
+Nilai di atas berasal dari output evaluasi validasi notebook. Nilai validasi bukan hasil evaluasi test; keduanya perlu dilaporkan secara terpisah.
+
+## Cara Menjalankan
+
+### 1. Buka notebook
+
+Buka `p1.ipynb` di Google Colab. Notebook juga dapat dibuka melalui tautan Colab berikut apabila repository dan file notebook tersedia:
+
+[Open notebook in Google Colab](https://colab.research.google.com/)
+
+### 2. Aktifkan GPU
+
+Di Google Colab, pilih **Runtime → Change runtime type → T4 GPU** (jika tersedia).
+
+### 3. Instal dependensi
+
+Jalankan di sel notebook:
+
+```python
+!pip install -q ultralytics
+```
+
+### 4. Unggah dan siapkan dataset
+
+Unggah file `dataset_v1.zip` ketika diminta notebook. Notebook mengekstrak dataset ke direktori kerja `/content/pj1` dan mencari file `data.yaml`.
+
+Pastikan file `data.yaml` menunjuk ke split yang benar:
+
+```yaml
+train: images/train
+val: images/val
+test: images/test
+```
+
+Konfigurasi jumlah kelas (`nc`) dan nama kelas (`names`) harus sesuai dengan dataset.
+
+### 5. Jalankan eksperimen
+
+Jalankan sel notebook secara berurutan untuk:
+1. Memasang dependensi dan menyiapkan dataset.
+2. Memeriksa struktur serta anotasi.
+3. Melatih E1 (pretrained).
+4. Melatih E2 (scratch).
+5. Melatih E3 (tuning).
+6. Membandingkan hasil validasi dan memilih model terbaik.
+7. Mengevaluasi model terpilih pada split test.
+8. Menjalankan prediksi gambar.
+
+## Hasil dan Artefak
+
+Notebook menyimpan hasil pelatihan pada direktori kerja berikut:
+
+```text
+/content/pj1/hasil_praktik/
+├── E1_pretrained/
+├── E2_scratch/
+└── E3_tuning/
+```
+
+Bobot model terbaik untuk setiap eksperimen berada di:
+
+```text
+<folder eksperimen>/weights/best.pt
+```
+
+Hasil prediksi gambar disimpan pada folder `prediksi`, sesuai nama eksperimen prediksi yang dijalankan. Lokasi penyimpanan aktual ditampilkan pada output notebook.
+
+## Evaluasi
+
+Metrik yang digunakan:
+
+- **Precision**: proporsi prediksi positif yang benar.
+- **Recall**: proporsi objek sebenarnya yang berhasil ditemukan model.
+- **mAP@50**: mean Average Precision pada ambang IoU 0,50.
+- **mAP@50–95**: rata-rata mAP pada ambang IoU 0,50 sampai 0,95; metrik ini mengukur performa pada rentang ambang yang lebih ketat.
+
+Hasil validasi menunjukkan bahwa E3 memiliki mAP@50–95 tertinggi di antara ketiga eksperimen. E2 menghasilkan performa yang jauh lebih rendah pada konfigurasi dan durasi pelatihan yang diuji. Hasil ini menunjukkan bahwa penggunaan bobot pretrained dan konfigurasi pelatihan sangat berpengaruh pada performa model dalam eksperimen ini.
+
+Evaluasi pada split **test** dijalankan secara terpisah menggunakan bobot model terbaik yang dipilih dari validasi. Cantumkan angka test dari output notebook setelah evaluasi test berhasil selesai; jangan menyamakan metrik validasi dengan metrik test.
+
+## Catatan Reproduksibilitas
+
+- Semua eksperimen pada output yang dirangkum di README ini menggunakan 10 epoch.
+- E1 dan E2 menggunakan ukuran gambar 416; E3 menggunakan ukuran gambar 640.
+- Hasil dapat berubah jika versi library, seed, GPU, dataset, atau konfigurasi pelatihan berbeda.
+- Pastikan dataset dan file `data.yaml` tersedia sebelum menjalankan notebook dari awal.
+
+## Teknologi
+
+- Python
+- Google Colab
+- Ultralytics YOLO
+- PyTorch
+- OpenCV (jika digunakan oleh proses visualisasi/prediksi)
+
+## Kredit
+
+Dibuat untuk tugas PJ1 mata kuliah **RET503 — Computer Vision and Deep Learning**.
