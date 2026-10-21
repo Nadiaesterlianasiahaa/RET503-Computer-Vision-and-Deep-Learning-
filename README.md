@@ -12,7 +12,7 @@
 | **Mata Kuliah** | Praktik Terpadu / RET503 — Computer Vision and Deep Learning |
 | **Model Dasar** | YOLO (`yolo26n` |
 | **Dataset** | `dataset_v1` (31 kelas target) |
-| **Lingkungan Uji** | *(contoh: Asus TUF A16* |
+| **Lingkungan Uji** | *Asus TUF A16* |
 
 ---
 
